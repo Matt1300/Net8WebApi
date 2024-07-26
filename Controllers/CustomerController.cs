@@ -1,10 +1,13 @@
-﻿using LearnAPI.Modal;
+﻿using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing.Charts;
+using LearnAPI.Modal;
 using LearnAPI.Service;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Cors;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using System.Data;
 
 namespace LearnAPI.Controllers
 {
@@ -16,9 +19,11 @@ namespace LearnAPI.Controllers
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerService _customerService;
-        public CustomerController(ICustomerService customerService)
+        private readonly IWebHostEnvironment _environment;
+        public CustomerController(ICustomerService customerService, IWebHostEnvironment environment)
         {
             _customerService = customerService;
+            _environment = environment;
         }
 
         [AllowAnonymous]
@@ -64,6 +69,62 @@ namespace LearnAPI.Controllers
         {
             var data = await _customerService.Remove(code);
             return Ok(data);
+        }
+
+        [AllowAnonymous]
+        [HttpGet("ExportExcel")]
+        public async Task<IActionResult> ExportExcel()
+        {
+            try
+            {
+                string Filepath = GetFilepath();
+                string excelpath = Filepath + "\\customerinfo.xlsx";
+
+                var dt = new System.Data.DataTable();
+                dt.Columns.Add("Code", typeof(string));
+                dt.Columns.Add("Name", typeof(string));
+                dt.Columns.Add("Email", typeof(string));
+                dt.Columns.Add("Phone", typeof(string));
+                dt.Columns.Add("CreditLimit", typeof(int));
+
+                var data = await _customerService.GetAll();
+                if (data != null && data.Count > 0)
+                {
+                    data.ForEach(x =>
+                    {
+                        dt.Rows.Add(x.Code, x.Name, x.Email, x.Phone, x.Creditlimit);
+                    });
+                }
+
+                using (XLWorkbook wb = new XLWorkbook())
+                {
+                    wb.AddWorksheet(dt,"Customer Info");
+                    using (MemoryStream ms = new MemoryStream())
+                    {
+                        wb.SaveAs(ms);
+
+                        if (System.IO.File.Exists(excelpath))
+                        {
+                            System.IO.File.Delete(excelpath);
+                        }
+                        wb.SaveAs(excelpath);
+
+                        return File(ms.ToArray(),"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet","Customer.xlsx");
+                    }
+                }
+
+            }
+            catch (Exception ex)
+            {
+
+                return NotFound();
+            }
+        }
+
+        [NonAction]
+        private string GetFilepath()
+        {
+            return _environment.WebRootPath + "\\Export";
         }
     }
 }

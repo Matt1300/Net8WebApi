@@ -68,6 +68,10 @@ builder.Services.Configure<JwtSettings>(_jwtsetting);
 
 var app = builder.Build();
 
+app.MapGet("/minimalapi", () => "Mateo Granizo");
+
+app.MapGet("/getchannel", (string channelname) => "Welcome to " + channelname);
+
 app.UseRateLimiter();
 
 // Configure the HTTP request pipeline.
