@@ -22,6 +22,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddTransient<ICustomerService, CustomerService>();
 builder.Services.AddTransient<IRefreshHandler, RefreshHandler>();
+builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IUserRoleService, UserRoleService>();
 
 builder.Services.AddDbContext<LearndataContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
@@ -75,11 +77,11 @@ app.MapGet("/getchannel", (string channelname) => "Welcome to " + channelname);
 app.UseRateLimiter();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
+//if (app.Environment.IsDevelopment())
+//{
     app.UseSwagger();
     app.UseSwaggerUI();
-}
+//}
 
 app.UseHttpsRedirection();
 

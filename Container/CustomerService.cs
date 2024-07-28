@@ -49,11 +49,20 @@ namespace LearnAPI.Container
         public async Task<List<CustomerModal>> GetAll()
         {
             List<CustomerModal> _response = new List<CustomerModal>();
-            var data = await _context.TblCustomers.ToListAsync();
-            if (data != null)
+            try
             {
-                _response = _mapper.Map<List<CustomerModal>>(data);
+                _logger.LogInformation("Get All Customers Logs Test");
+                var data = await _context.TblCustomers.ToListAsync();
+                if (data != null)
+                {
+                    _response = _mapper.Map<List<CustomerModal>>(data);
+                }
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.ToString());
+            }
+
             return _response;
         }
 
@@ -119,7 +128,7 @@ namespace LearnAPI.Container
                 {
                     _response.ResponseCode = 404;
                     _response.ErrorMessage = "Data not found";
-                }             
+                }
 
             }
             catch (DbUpdateException ex)
