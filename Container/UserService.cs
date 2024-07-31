@@ -20,12 +20,12 @@ namespace LearnAPI.Container
             bool otpResponse = await ValidateOTP(username, otpText);
             if (!otpResponse)
             {
-                response.ResponseCode = 111;
-                response.Result = "Invalid OTP or Expired";
+                response.ResponseCode = 400;
+                response.ErrorMessage = "Invalid OTP or Expired";
             }
             else
             {
-                var _tempdata = await _context.TblTempusers.FirstOrDefaultAsync(item => item.Id == userId);
+                var _tempdata = await _context.TblTempusers.FindAsync(userId);
                 var _user = new TblUser()
                 {
                     Username = username,
@@ -38,11 +38,11 @@ namespace LearnAPI.Container
                     Islocked = false,
                     Role = "user"
                 };
-                await _context.TblUsers.AddAsync(_user);
+                _context.TblUsers.Add(_user);
                 await _context.SaveChangesAsync();
                 await UpdatePWDManager(username, _tempdata.Password);
 
-                response.ResponseCode = 000;
+                response.ResponseCode = 200;
                 response.Result = "Registered successfully.";
             }
 
@@ -63,7 +63,7 @@ namespace LearnAPI.Container
                 if (_user.Count > 0)
                 {
                     isValid = false;
-                    response.ResponseCode = 111;
+                    response.ResponseCode = 400;
                     response.ErrorMessage = "Duplicate username";
                 }
 
@@ -72,7 +72,7 @@ namespace LearnAPI.Container
                 if (_userEmail.Count > 0)
                 {
                     isValid = false;
-                    response.ResponseCode = 111;
+                    response.ResponseCode = 400;
                     response.ErrorMessage = "Duplicate email";
                 }
 
@@ -94,14 +94,14 @@ namespace LearnAPI.Container
                     await UpdateOtp(userRegister.UserName, OTPText, "register");
                     SendOtpMail(userRegister.Email, OTPText, userRegister.Name);
 
-                    response.ResponseCode = 000;
+                    response.ResponseCode = 200;
                     response.Result = userId.ToString();
                 }
             }
             catch (Exception ex)
             {
-
-                response.ErrorMessage = "Fail";
+                response.ResponseCode = 400;
+                response.ErrorMessage = "Fail: " + ex;
             }
 
             return response;
@@ -117,7 +117,7 @@ namespace LearnAPI.Container
                 var _pwdHistory = await ValidatePWDHistory(username, newPassword);
                 if (_pwdHistory)
                 {
-                    response.ResponseCode = 111;
+                    response.ResponseCode = 400;
                     response.ErrorMessage = "Don't use the same password that used in last 3 transaction";
                 }
                 else
@@ -126,15 +126,15 @@ namespace LearnAPI.Container
                     await _context.SaveChangesAsync();
                     await UpdatePWDManager(username, newPassword);
 
-                    response.ResponseCode = 000;
-                    response.ErrorMessage = "Password updated";
+                    response.ResponseCode = 200;
+                    response.Result = "Password updated";
                 }
 
 
             }
             else
             {
-                response.ResponseCode = 111;
+                response.ResponseCode = 400;
                 response.ErrorMessage = "Failed to validate old password";
             }
 
@@ -151,12 +151,12 @@ namespace LearnAPI.Container
                 string otptext = GenerateRandomNumber();
                 await UpdateOtp(username, otptext, "forgetpassword");
                 SendOtpMail(_user.Email, otptext, _user.Username);
-                response.ResponseCode = 000;
+                response.ResponseCode = 200;
                 response.Result = "OTP Sent";
             }
             else
             {
-                response.ResponseCode = 111;
+                response.ResponseCode = 400;
                 response.ErrorMessage = "Invalid User";
             }
 
@@ -173,7 +173,7 @@ namespace LearnAPI.Container
                 bool pwdHistory = await ValidatePWDHistory(username, password);
                 if (pwdHistory)
                 {
-                    response.ResponseCode = 111;
+                    response.ResponseCode = 400;
                     response.ErrorMessage = "Don't use the same password that used in last 3 transaction";
                 }
                 else
@@ -185,14 +185,14 @@ namespace LearnAPI.Container
                         await _context.SaveChangesAsync();
                         await UpdatePWDManager(username, password);
 
-                        response.ResponseCode = 000;
+                        response.ResponseCode = 200;
                         response.Result = "Password Updated";
                     }
                 }
             }
             else
             {
-                response.ResponseCode = 111;
+                response.ResponseCode = 400;
                 response.ErrorMessage = "Invalid OTP";
             }
 
@@ -207,12 +207,12 @@ namespace LearnAPI.Container
                 _user.Isactive = userStatus;
                 await _context.SaveChangesAsync();
 
-                response.ResponseCode = 000;
+                response.ResponseCode = 200;
                 response.Result = "Status Updated";
             }
             else
             {
-                response.ResponseCode = 111;
+                response.ResponseCode = 400;
                 response.ErrorMessage = "Invalid user";
             }
             return response;
@@ -227,12 +227,12 @@ namespace LearnAPI.Container
                 _user.Role = userRol;
                 await _context.SaveChangesAsync();
 
-                response.ResponseCode = 000;
+                response.ResponseCode = 200;
                 response.Result = "Rol Updated";
             }
             else
             {
-                response.ResponseCode = 111;
+                response.ResponseCode = 400;
                 response.ErrorMessage = "Invalid user";
             }
 
@@ -306,6 +306,6 @@ namespace LearnAPI.Container
             return response;
         }
 
-       
+
     }
 }

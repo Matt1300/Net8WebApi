@@ -1,4 +1,5 @@
 using AutoMapper;
+using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
 using LearnAPI.Container;
 using LearnAPI.Helper;
 using LearnAPI.Modal;
@@ -67,6 +68,16 @@ builder.Host.UseSerilog((context, configuration) =>
 
 var _jwtsetting = builder.Configuration.GetSection("JwtSettings");
 builder.Services.Configure<JwtSettings>(_jwtsetting);
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(builder =>
+    {
+        builder.WithOrigins("http://localhost:4200")
+               .AllowAnyHeader()
+               .AllowAnyMethod();
+    });
+});
 
 var app = builder.Build();
 

@@ -26,9 +26,9 @@ namespace LearnAPI.Container
                 {
                     if (_data.Count > 0)
                     {
-                        _data.ForEach(item =>
+                        foreach (var item in _data)
                         {
-                            var userdata = _context.TblRolepermissions.FirstOrDefault(x => x.Userrole == item.Userrole && x.Menucode == item.Menucode);
+                            var userdata = await _context.TblRolepermissions.FirstOrDefaultAsync(x => x.Userrole == item.Userrole && x.Menucode == item.Menucode);
                             if (userdata != null)
                             {
                                 userdata.Haveview = item.Haveview;
@@ -42,36 +42,33 @@ namespace LearnAPI.Container
                                 _context.TblRolepermissions.Add(item);
                                 processcount++;
                             }
-                        });
+                        }
 
-                        if(_data.Count == processcount)
+                        if (_data.Count == processcount)
                         {
                             await _context.SaveChangesAsync();
                             await dbtransaction.CommitAsync();
-                            response.ResponseCode = 000;
+                            response.ResponseCode = 200;
                             response.Result = "Saved successfully";
                         }
                         else
                         {
                             await dbtransaction.RollbackAsync();
-                            
                         }
                     }
                     else
                     {
-                        response.ResponseCode = 111;
+                        response.ResponseCode = 400;
                         response.ErrorMessage = "Failed";
                     }
                 }
             }
             catch (Exception)
             {
-
                 throw;
             }
 
             return response;
-
         }
 
         public async Task<List<TblMenu>> GetAllMenus()

@@ -31,7 +31,7 @@ namespace LearnAPI.Container
                 await _context.TblCustomers.AddAsync(customer);
                 await _context.SaveChangesAsync();
 
-                _response.ResponseCode = 201;
+                _response.ResponseCode = 200;
                 _response.Result = data.Code;
 
             }
