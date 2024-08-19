@@ -26,16 +26,16 @@ namespace LearnAPI.Controllers
         }
 
         [HttpPost("ConfirmRegistration")]
-        public async Task<IActionResult> ConfirmRegistration(int userId, string username, string otpText)
+        public async Task<IActionResult> ConfirmRegistration(RegisterConfirm registerConfirm)
         {
-            var data = await _userService.ConfirmRegistration(userId, username, otpText);
+            var data = await _userService.ConfirmRegistration(registerConfirm);
             return Ok(data);
         }
 
         [HttpPost("ResetPassword")]
-        public async Task<IActionResult> ResetPassword(string username, string oldpassword, string newpassword)
+        public async Task<IActionResult> ResetPassword(ResetPassword resetPassword)
         {
-            var data = await _userService.ResetPassword(username, oldpassword, newpassword);
+            var data = await _userService.ResetPassword(resetPassword);
             return Ok(data);
         }
 
@@ -47,9 +47,9 @@ namespace LearnAPI.Controllers
         }
 
         [HttpPost("UpdatePassword")]
-        public async Task<IActionResult> UpdatePassword(string username, string password, string otpText)
+        public async Task<IActionResult> UpdatePassword(UpdatePassword updatePassword)
         {
-            var data = await _userService.UpdatePassword(username, password, otpText);
+            var data = await _userService.UpdatePassword(updatePassword);
             return Ok(data);
         }
 

@@ -14,10 +14,10 @@ namespace LearnAPI.Container
         {
             _context = context;
         }
-        public async Task<APIResponse> ConfirmRegistration(int userId, string username, string otpText)
+        public async Task<APIResponse> ConfirmRegistration(RegisterConfirm registerConfirm)
         {
             APIResponse response = new APIResponse();
-            bool otpResponse = await ValidateOTP(username, otpText);
+            bool otpResponse = await ValidateOTP(registerConfirm.Username, registerConfirm.OtpText);
             if (!otpResponse)
             {
                 response.ResponseCode = 400;
@@ -25,11 +25,11 @@ namespace LearnAPI.Container
             }
             else
             {
-                var _tempdata = await _context.TblTempusers.FindAsync(userId);
+                var _tempdata = await _context.TblTempusers.FindAsync(registerConfirm.UserId);
                 var _user = new TblUser()
                 {
-                    Username = username,
-                    Name = _tempdata.Name,
+                    Username = registerConfirm.Username,
+                    Name = _tempdata!.Name,
                     Email = _tempdata.Email,
                     Password = _tempdata.Password,
                     Phone = _tempdata.Phone,
@@ -40,7 +40,7 @@ namespace LearnAPI.Container
                 };
                 _context.TblUsers.Add(_user);
                 await _context.SaveChangesAsync();
-                await UpdatePWDManager(username, _tempdata.Password);
+                await UpdatePWDManager(registerConfirm.Username, _tempdata.Password);
 
                 response.ResponseCode = 200;
                 response.Result = "Registered successfully.";
@@ -107,14 +107,14 @@ namespace LearnAPI.Container
             return response;
         }
 
-        public async Task<APIResponse> ResetPassword(string username, string oldPassword, string newPassword)
+        public async Task<APIResponse> ResetPassword(ResetPassword resetPassword)
         {
             APIResponse response = new APIResponse();
 
-            var _user = await _context.TblUsers.FirstOrDefaultAsync(item => item.Username == username && item.Password == oldPassword && item.Isactive == true);
+            var _user = await _context.TblUsers.FirstOrDefaultAsync(item => item.Username == resetPassword.Username && item.Password == resetPassword.OldPassword && item.Isactive == true);
             if (_user != null)
             {
-                var _pwdHistory = await ValidatePWDHistory(username, newPassword);
+                var _pwdHistory = await ValidatePWDHistory(resetPassword.Username, resetPassword.NewPassword);
                 if (_pwdHistory)
                 {
                     response.ResponseCode = 400;
@@ -122,9 +122,9 @@ namespace LearnAPI.Container
                 }
                 else
                 {
-                    _user.Password = newPassword;
+                    _user.Password = resetPassword.NewPassword;
                     await _context.SaveChangesAsync();
-                    await UpdatePWDManager(username, newPassword);
+                    await UpdatePWDManager(resetPassword.Username, resetPassword.NewPassword);
 
                     response.ResponseCode = 200;
                     response.Result = "Password updated";
@@ -150,7 +150,9 @@ namespace LearnAPI.Container
             {
                 string otptext = GenerateRandomNumber();
                 await UpdateOtp(username, otptext, "forgetpassword");
-                SendOtpMail(_user.Email, otptext, _user.Username);
+                if (_user.Email != null)
+                    await SendOtpMail(_user.Email, otptext, _user.Username);
+
                 response.ResponseCode = 200;
                 response.Result = "OTP Sent";
             }
@@ -163,14 +165,14 @@ namespace LearnAPI.Container
             return response;
         }
 
-        public async Task<APIResponse> UpdatePassword(string username, string password, string otpText)
+        public async Task<APIResponse> UpdatePassword(UpdatePassword updatePassword)
         {
             APIResponse response = new APIResponse();
 
-            bool otpValidation = await ValidateOTP(username, otpText);
+            bool otpValidation = await ValidateOTP(updatePassword.Username, updatePassword.OtpText);
             if (otpValidation)
             {
-                bool pwdHistory = await ValidatePWDHistory(username, password);
+                bool pwdHistory = await ValidatePWDHistory(updatePassword.Username, updatePassword.Password);
                 if (pwdHistory)
                 {
                     response.ResponseCode = 400;
@@ -178,12 +180,12 @@ namespace LearnAPI.Container
                 }
                 else
                 {
-                    var _user = await _context.TblUsers.FirstOrDefaultAsync(item => item.Username == username && item.Isactive == true);
+                    var _user = await _context.TblUsers.FirstOrDefaultAsync(item => item.Username == updatePassword.Username && item.Isactive == true);
                     if (_user != null)
                     {
-                        _user.Password = password;
+                        _user.Password = updatePassword.Password;
                         await _context.SaveChangesAsync();
-                        await UpdatePWDManager(username, password);
+                        await UpdatePWDManager(updatePassword.Username, updatePassword.Password);
 
                         response.ResponseCode = 200;
                         response.Result = "Password Updated";

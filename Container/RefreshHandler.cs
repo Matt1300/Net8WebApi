@@ -10,7 +10,7 @@ namespace LearnAPI.Container
     {
         private readonly LearndataContext _context;
 
-        public RefreshHandler( LearndataContext context)
+        public RefreshHandler(LearndataContext context)
         {
             _context = context;
         }

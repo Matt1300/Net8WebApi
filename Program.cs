@@ -43,7 +43,7 @@ builder.Services.AddAuthentication(item =>
     item.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters()
     {
         ValidateIssuerSigningKey = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authKey)),
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_authKey!)),
         ValidateIssuer = false,
         ValidateAudience = false,
         ClockSkew = TimeSpan.Zero,
@@ -53,14 +53,22 @@ builder.Services.AddAuthentication(item =>
 var automapper = new MapperConfiguration(item => item.AddProfile(new AutoMapperHandler()));
 IMapper mapper = automapper.CreateMapper();
 builder.Services.AddSingleton(mapper);
-builder.Services.AddCors();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowSpecificOrigin",
+        builder => builder.WithOrigins("http://localhost:4200")
+                          .AllowAnyHeader()
+                          .AllowAnyMethod());
+});
+
 builder.Services.AddRateLimiter(_ => _.AddFixedWindowLimiter(policyName: "fixedwindow", options =>
 {
     options.Window = TimeSpan.FromSeconds(10);
-    options.PermitLimit = 1;
+    options.PermitLimit = 5;
     options.QueueLimit = 0;
     options.QueueProcessingOrder = System.Threading.RateLimiting.QueueProcessingOrder.OldestFirst;
-}).RejectionStatusCode = 401);
+}).RejectionStatusCode = 429);
 
 //Add support to logging with SERILOG
 builder.Host.UseSerilog((context, configuration) =>
@@ -69,15 +77,6 @@ builder.Host.UseSerilog((context, configuration) =>
 var _jwtsetting = builder.Configuration.GetSection("JwtSettings");
 builder.Services.Configure<JwtSettings>(_jwtsetting);
 
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(builder =>
-    {
-        builder.WithOrigins("http://localhost:4200")
-               .AllowAnyHeader()
-               .AllowAnyMethod();
-    });
-});
 
 var app = builder.Build();
 
@@ -85,20 +84,21 @@ app.MapGet("/minimalapi", () => "Mateo Granizo");
 
 app.MapGet("/getchannel", (string channelname) => "Welcome to " + channelname);
 
+app.UseCors("AllowSpecificOrigin");
+
 app.UseRateLimiter();
 
 // Configure the HTTP request pipeline.
 //if (app.Environment.IsDevelopment())
 //{
-    app.UseSwagger();
-    app.UseSwaggerUI();
+app.UseSwagger();
+app.UseSwaggerUI();
 //}
 
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 
-app.UseCors();
 
 app.UseAuthentication();
 
